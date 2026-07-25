@@ -15,26 +15,57 @@ export default function Home() {
     useState<SelectedAddress | null>(null);
     const [dateOfLoss, setDateOfLoss] = useState("");
     const [formError, setFormError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submissionMessage, setSubmissionMessage] = useState("");
 
-      function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-      event.preventDefault();
+      async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
 
-      if (!selectedAddress) {
-      setFormError("Please select a property from the address suggestions.");
-      return;
-      }
+        if (!selectedAddress) {
+          setFormError("Please select a property from the address suggestions.");
+          return;
+        }
 
-      if (!dateOfLoss) {
-      setFormError("Please select a date of loss.");
-      return;
-      }
+        if (!dateOfLoss) {
+          setFormError("Please select a date of loss.");
+          return;
+        }
 
-      setFormError("");
+        setFormError("");
+        setSubmissionMessage("");
+        setIsSubmitting(true);
 
-      console.log("Weather Snapshot request:", {
-        ...selectedAddress,
-        dateOfLoss,
-      });
+        try {
+          const response = await fetch("/api/weather", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ...selectedAddress,
+              dateOfLoss,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Weather request failed.");
+          }
+
+          console.log("Weather API response:", data);
+          setSubmissionMessage(data.message);
+        } catch (error) {
+          console.error("Weather API request failed:", error);
+
+          setFormError(
+            error instanceof Error
+              ? error.message
+              : "Unable to process the weather request."
+          );
+        } finally {
+          setIsSubmitting(false);
+        }
       }
 
   return (
@@ -198,10 +229,21 @@ export default function Home() {
 
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-[var(--navy)] px-5 py-4 text-base font-semibold text-white transition hover:bg-[var(--storm-blue)]"
+                  disabled={isSubmitting}
+                  className="w-full rounded-xl bg-[var(--navy)] px-5 py-4 text-base font-semibold text-white transition hover:bg-[var(--storm-blue)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Check Weather Activity
+                  {isSubmitting ? "Checking Weather Activity..." : "Check Weather Activity"}
                 </button>
+
+                {submissionMessage && (
+                  <div
+                    className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+                    role="status"
+                  >
+                    {submissionMessage}
+                  </div>
+                )}
+                
               </form>
 
               <div className="mt-6 rounded-xl bg-slate-50 p-4">
