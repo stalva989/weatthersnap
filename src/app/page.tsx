@@ -1,4 +1,42 @@
+"use client";
+
+import { useState } from "react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+
+type SelectedAddress = {
+  formattedAddress: string;
+  latitude: number;
+  longitude: number;
+  placeId: string;
+};
+
 export default function Home() {
+  const [selectedAddress, setSelectedAddress] =
+    useState<SelectedAddress | null>(null);
+    const [dateOfLoss, setDateOfLoss] = useState("");
+    const [formError, setFormError] = useState("");
+
+      function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+      event.preventDefault();
+
+      if (!selectedAddress) {
+      setFormError("Please select a property from the address suggestions.");
+      return;
+      }
+
+      if (!dateOfLoss) {
+      setFormError("Please select a date of loss.");
+      return;
+      }
+
+      setFormError("");
+
+      console.log("Weather Snapshot request:", {
+        ...selectedAddress,
+        dateOfLoss,
+      });
+      }
+
   return (
     <main className="min-h-screen bg-[var(--background)]">
       <header className="border-b border-[var(--border)] bg-white">
@@ -108,7 +146,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <form className="mt-8 space-y-5">
+              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                 <div>
                   <label
                     htmlFor="address"
@@ -116,13 +154,23 @@ export default function Home() {
                   >
                     Property address
                   </label>
-                  <input
-                    id="address"
-                    name="address"
-                    type="text"
-                    placeholder="123 Main Street, Philadelphia, PA"
-                    className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[var(--storm-blue)] focus:ring-4 focus:ring-blue-100"
-                  />
+                  <AddressAutocomplete onAddressSelect={setSelectedAddress} />
+                  {selectedAddress && (
+                    <div className="mt-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                      <p>
+                        <strong>Address:</strong> {selectedAddress.formattedAddress}
+                      </p>
+                      <p>
+                        <strong>Latitude:</strong> {selectedAddress.latitude}
+                      </p>
+                      <p>
+                        <strong>Longitude:</strong> {selectedAddress.longitude}
+                      </p>
+                      <p>
+                        <strong>Place ID:</strong> {selectedAddress.placeId}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -136,9 +184,17 @@ export default function Home() {
                     id="dateOfLoss"
                     name="dateOfLoss"
                     type="date"
+                    value={dateOfLoss}
+                    onChange={(event) => setDateOfLoss(event.target.value)}
                     className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-4 text-base text-slate-900 outline-none transition focus:border-[var(--storm-blue)] focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
+
+                {formError && (
+                  <p className="text-sm text-red-600" role="alert">
+                    {formError}
+                  </p>
+                )}
 
                 <button
                   type="submit"
