@@ -1,6 +1,7 @@
+import { calculateDistanceMiles } from "./geo";
+
 export type NceiDailySummaryRequest = {
-  latitude: number;
-  longitude: number;
+  stationId: string;
   startDate: string;
   endDate: string;
 };
@@ -25,6 +26,11 @@ export type NceiStation = {
   name: string;
   latitude: number;
   longitude: number;
+  distanceMiles: number;
+  platforms: string[];
+  dataTypes: string[];
+  startDate: string;
+  endDate: string;
 };
 
 export async function findNearbyNceiStations(
@@ -63,57 +69,105 @@ export async function findNearbyNceiStations(
 
   const data = await response.json();
 
+    
+  const stations: NceiStation[] = data.results
+    .map((result: any) => {
+        const station = result.stations?.[0];
+        const coordinates = result.location?.coordinates ?? result.centroid;
+
+        if (
+        !station?.id ||
+        !station?.name ||
+        !Array.isArray(coordinates) ||
+        coordinates.length < 2
+        ) {
+        return null;
+        }
+
+        return {
+            id: station.id,
+            name: station.name,
+            latitude: coordinates[1],
+            longitude: coordinates[0],
+            distanceMiles: calculateDistanceMiles(
+                latitude,
+                longitude,
+                coordinates[1],
+                coordinates[0]
+            ),
+            platforms:
+                station.platforms?.map((platform: any) => platform.id) ?? [],
+            dataTypes:
+                station.dataTypes?.map((dataType: any) => dataType.id) ?? [],
+            startDate: result.startDate,
+            endDate: result.endDate,
+        };
+    })
+    .filter((station: NceiStation | null): station is NceiStation => {
+        return station !== null;
+    });
+
     console.log(
-        "First NCEI station result:",
-        JSON.stringify(data.results?.[0], null, 2)
+        "Parsed NCEI stations:",
+        stations.map((station) => ({
+            id: station.id,
+            name: station.name,
+            distanceMiles: station.distanceMiles,
+            platforms: station.platforms,
+            dataTypeCount: station.dataTypes.length,
+        }))
     );
 
-  return [];
-}
+    return stations;
+    }
 
 export async function getNceiDailySummaries(
-  request: NceiDailySummaryRequest
-): Promise<NceiDailySummaryRecord[]> {
-  const boundingBox = createBoundingBox(
-    request.latitude,
-    request.longitude
-  );
+    request: NceiDailySummaryRequest
+    ): Promise<NceiDailySummaryRecord[]> {
+    const params = new URLSearchParams({
+        dataset: "daily-summaries",
+        stations: request.stationId,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        format: "json",
+        units: "standard",
+        includeStationName: "true",
+        includeStationLocation: "true",
+        includeAttributes: "true",
+    });
 
-  const params = new URLSearchParams({
-    dataset: "daily-summaries",
-    startDate: request.startDate,
-    endDate: request.endDate,
-    bbox: boundingBox,
-    format: "json",
-    units: "standard",
-    includeStationName: "true",
-    includeStationLocation: "true",
-  });
-
-  const response = await fetch(
-    `https://www.ncei.noaa.gov/access/services/data/v1?${params.toString()}`,
-    {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "WeatherSnap.app (contact@weathersnap.app)",
-      },
-      cache: "no-store",
-    }
-  );
+    const response = await fetch(
+        `https://www.ncei.noaa.gov/access/services/data/v1?${params.toString()}`,
+        {
+        headers: {
+            Accept: "application/json",
+            "User-Agent": "WeatherSnap.app (contact@weathersnap.app)",
+        },
+        cache: "no-store",
+        }
+    );
 
     if (!response.ok) {
         const errorBody = await response.text();
 
         console.error("NCEI request failed:", {
-            status: response.status,
-            url: response.url,
-            response: errorBody,
+        status: response.status,
+        url: response.url,
+        response: errorBody,
         });
 
         throw new Error(
-            `Unable to retrieve NCEI daily summaries: ${response.status} - ${errorBody}`
+        `Unable to retrieve NCEI daily summaries: ${response.status} - ${errorBody}`
         );
     }
 
-  return response.json();
-}
+    const data = await response.json();
+
+    console.log(
+        `Retrieved ${data.length} daily summaries from station ${request.stationId}`
+    );
+
+    return data;
+    }
+
+  

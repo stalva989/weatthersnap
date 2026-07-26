@@ -1,3 +1,5 @@
+import { rankStations } from "./stationRanking";
+
 import {
   findNearbyNceiStations,
   getNceiDailySummaries,
@@ -50,18 +52,40 @@ export async function getHistoricalWeather(
         windowStart,
         windowEnd
     );
-    //const dailySummaries = await getNceiDailySummaries({
-        //latitude: request.latitude,
-       // longitude: request.longitude,
-        //startDate: windowStart,
-       // endDate: windowEnd,
-    //});
+    const rankedStations = rankStations(nearbyStations);
+    const primaryStation = rankedStations[0];
+
+    if (!primaryStation) {
+        throw new Error("No suitable weather stations found.");
+    }
+    const dailySummaries = await getNceiDailySummaries({
+        stationId: primaryStation.id,
+        startDate: windowStart,
+        endDate: windowEnd,
+    });
 
   console.log("Historical weather lookup:", {
     ...request,
     windowStart,
     windowEnd,
   });
+
+  console.log(
+    "Top ranked station:",
+    rankedStations.length > 0
+        ? {
+            name: rankedStations[0].name,
+            score: rankedStations[0].score,
+            distance: rankedStations[0].distanceMiles,
+        }
+        : "No stations found"
+    );
+
+   console.log("Using primary weather station:", {
+        id: primaryStation.id,
+        name: primaryStation.name,
+        score: primaryStation.score,
+    });
 
     return {
         success: true,
@@ -70,7 +94,7 @@ export async function getHistoricalWeather(
         windowEnd,
         totalDays: 31,
         weatherEvents: [],
-        nearbyStations,
-        dailySummaries: [],
+        nearbyStations: rankedStations,
+        dailySummaries,
     };
 }
