@@ -1,4 +1,13 @@
 import { rankStations } from "./stationRanking";
+import { mapNceiDailySummary } from "./weatherMapper";
+import {
+  buildWeatherEvents,
+  buildSnapshotSummary,
+  SnapshotSummary,
+  WeatherEvent,
+} from "./weatherIntelligence";
+import { DailyWeatherObservation } from "@/types/weather";
+import { WeatherFinding } from "./weatherIntelligence";
 
 import {
   findNearbyNceiStations,
@@ -20,14 +29,20 @@ export type HistoricalWeatherResult = {
   windowStart: string;
   windowEnd: string;
   totalDays: number;
+
   weatherEvents: [];
+
   nearbyStations: {
     id: string;
     name: string;
     latitude: number;
     longitude: number;
   }[];
-  dailySummaries: Record<string, string | number | null>[];
+
+    dailySummaries: DailyWeatherObservation[];
+    events: WeatherEvent[];
+
+    snapshot: SnapshotSummary;
 };
 
 function formatDate(date: Date): string {
@@ -63,6 +78,16 @@ export async function getHistoricalWeather(
         startDate: windowStart,
         endDate: windowEnd,
     });
+    const observations = dailySummaries.map(mapNceiDailySummary);
+    const events = buildWeatherEvents(
+        observations,
+        request.dateOfLoss
+    );
+
+    const snapshot = buildSnapshotSummary(
+        events,
+        request.dateOfLoss
+    );
 
   console.log("Historical weather lookup:", {
     ...request,
@@ -95,6 +120,8 @@ export async function getHistoricalWeather(
         totalDays: 31,
         weatherEvents: [],
         nearbyStations: rankedStations,
-        dailySummaries,
+        dailySummaries: observations,
+        events,
+        snapshot,
     };
 }
