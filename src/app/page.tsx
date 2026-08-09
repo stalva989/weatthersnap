@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import WeatherSnapshotReport from "@/components/WeatherSnapshotReport";
 
 type SelectedAddress = {
   formattedAddress: string;
@@ -17,6 +18,7 @@ export default function Home() {
     const [formError, setFormError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionMessage, setSubmissionMessage] = useState("");
+    const [weatherReport, setWeatherReport] = useState<any>(null);
 
       async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -54,6 +56,9 @@ export default function Home() {
           }
 
           console.log("Weather API response:", data);
+
+          setWeatherReport(data);
+
           setSubmissionMessage(data.message);
         } catch (error) {
           console.error("Weather API request failed:", error);
@@ -262,6 +267,14 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {weatherReport && (
+        <section className="bg-slate-100 py-20">
+          <div className="mx-auto max-w-7xl px-6">
+            <WeatherSnapshotReport report={weatherReport} />
+          </div>
+        </section>
+      )}
 
       <section
         id="how-it-works"
