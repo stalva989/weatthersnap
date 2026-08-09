@@ -1,58 +1,75 @@
-export default function ActivityMap() {
+import MapboxMap from "./MapboxMap";
+
+type Props = {
+  address?: string;
+  latitude: number;
+  longitude: number;
+  events?: any[];
+};
+
+export default function ActivityMap({
+  address,
+  latitude,
+  longitude,
+  events = [],
+}: Props) {
   return (
-    <div className="rounded-xl border border-slate-300 bg-white p-6">
+    <div className="rounded-xl overflow-hidden border border-slate-300 bg-white">
 
-      <div className="mb-4 flex items-center justify-between">
+      {/* Header */}
 
-        <h3 className="text-lg font-bold text-slate-900">
-          Event Location Map
-        </h3>
+      <div className="flex items-center justify-between border-b px-6 py-4">
 
-        <div className="text-xs uppercase tracking-wider text-slate-500">
-          2 Mile Radius
-        </div>
+        <div>
 
-      </div>
+          <h3 className="text-lg font-bold text-slate-900">
+            Event Location Map
+          </h3>
 
-      {/* Map Placeholder */}
-
-      <div className="relative h-[420px] overflow-hidden rounded-lg border bg-slate-50">
-
-        {/* Property */}
-
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
-            P
+          <div className="text-sm text-slate-500">
+            Approximate weather activity relative to the property
           </div>
 
         </div>
 
-        {/* Search Radius */}
-
-        <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-slate-300" />
-
-        <div className="absolute bottom-4 right-4 rounded bg-white px-3 py-2 text-xs text-slate-500 shadow">
-          Live event map coming next
+        <div className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
+          Auto Scale
         </div>
 
       </div>
 
-      {/* Legend */}
+      {/* Map */}
 
-      <div className="mt-6 grid grid-cols-2 gap-3 text-sm">
+      <div className="h-[430px]">
 
-        <Legend color="black" label="Property" />
+        <MapboxMap
+          latitude={latitude}
+          longitude={longitude}
+          events={events}
+        />
 
-        <Legend color="red" label="Hail" />
+      </div>
 
-        <Legend color="blue" label="Wind" />
+      {/* Footer */}
 
-        <Legend color="orange" label="Warning" />
+      <div className="border-t px-6 py-5">
 
-        <Legend color="green" label="Tornado" />
+        <div className="grid grid-cols-2 gap-4 text-sm">
 
-        <Legend color="gray" label="Other Weather" />
+          <Legend color="black" label="Property" />
+          <Legend color="#ef4444" label="Weather Event" />
+          <Legend color="#3b82f6" label="Wind" />
+          <Legend color="#f97316" label="Warning" />
+          <Legend color="#22c55e" label="Tornado" />
+          <Legend color="#6b7280" label="Other" />
+
+        </div>
+
+        {address && (
+          <div className="mt-5 border-t pt-4 text-xs text-slate-500">
+            Property: {address}
+          </div>
+        )}
 
       </div>
 

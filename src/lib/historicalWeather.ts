@@ -59,8 +59,8 @@ function addDays(dateString: string, numberOfDays: number): string {
 export async function getHistoricalWeather(
   request: HistoricalWeatherRequest
 ): Promise<HistoricalWeatherResult> {
-    const windowStart = addDays(request.dateOfLoss, -15);
-    const windowEnd = addDays(request.dateOfLoss, 15);
+    const windowStart = addDays(request.dateOfLoss, -1);
+    const windowEnd = addDays(request.dateOfLoss, 1);
     const nearbyStations = await findNearbyNceiStations(
         request.latitude,
         request.longitude,
@@ -117,7 +117,7 @@ export async function getHistoricalWeather(
         requestedDate: request.dateOfLoss,
         windowStart,
         windowEnd,
-        totalDays: 31,
+        totalDays: 3,
         weatherEvents: [],
         nearbyStations: rankedStations,
         dailySummaries: observations,
