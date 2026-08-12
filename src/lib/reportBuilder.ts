@@ -139,6 +139,15 @@ export function buildReportModel(
       event.distanceMiles <= PRIMARY_RADIUS_MILES
   );
 
+  const closestEvent =
+  nearbyEvents.length > 0
+    ? Math.min(
+        ...nearbyEvents.map(
+          (event: any) => event.distanceMiles
+        )
+      )
+    : null;
+
   /*
    * FALLBACK:
    * If nothing happened within 5 miles,
@@ -378,47 +387,51 @@ export function buildReportModel(
     },
 
     metrics: [
-      {
-        title: "Closest Hail",
-        value:
-          closestHail !== null
-            ? closestHail.toFixed(1)
-            : "--",
-        subtitle: "mi",
-      },
+        {
+            title: "Closest Event",
+            value:
+            closestEvent !== null
+                ? closestEvent.toFixed(1)
+                : "--",
+            subtitle: "mi",
+        },
 
-      {
-        title: "Largest Hail",
-        value:
-          largestHail > 0
-            ? largestHail.toFixed(2)
-            : "--",
-        subtitle: "in",
-      },
+        {
+            title: "Closest Hail",
+            value:
+            closestHail !== null
+                ? closestHail.toFixed(1)
+                : "--",
+            subtitle: "mi",
+        },
 
-      {
-        title: "Highest Wind",
-        value:
-          highestWind > 0
-            ? highestWind.toFixed(0)
-            : "--",
-        subtitle: "mph",
-      },
+        {
+            title: "Largest Hail",
+            value:
+            largestHail > 0
+                ? largestHail.toFixed(2)
+                : "--",
+            subtitle: "in",
+        },
 
-      {
-        title: "Tornado Reports",
-        value: tornadoReports,
-      },
+        {
+            title: "Highest Wind",
+            value:
+            highestWind > 0
+                ? highestWind.toFixed(0)
+                : "--",
+            subtitle: "mph",
+        },
 
-      {
-        title: "Warnings",
-        value: 0,
-      },
+        {
+            title: "Tornado Reports",
+            value: tornadoReports,
+        },
 
-      {
-        title: "Total Events",
-        value: nearbyEvents.length,
-      },
+        {
+            title: "Documented Events",
+            value: nearbyEvents.length,
+        },
     ],
 
     map: {

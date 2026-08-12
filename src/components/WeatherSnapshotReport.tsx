@@ -7,65 +7,116 @@ import Timeline from "./report/Timeline";
 import WeatherContext from "./report/WeatherContext";
 import DataSources from "./report/DataSources";
 import Disclaimer from "./report/Disclaimer";
+import ReportPaywall from "./report/ReportPaywall";
 
 import { buildReportModel } from "@/lib/reportBuilder";
 
 type Props = {
   report: any;
+  isUnlocked: boolean;
 };
 
-export default function WeatherSnapshotReport({ report }: Props) {
+export default function WeatherSnapshotReport({
+  report,
+  isUnlocked,
+}: Props) {
   const model = buildReportModel(report);
 
   return (
     <div className="mx-auto max-w-7xl rounded-xl border border-slate-300 bg-slate-100 p-8">
 
-      <div className="rounded-xl bg-white p-8 shadow">
+      <div className="relative overflow-hidden rounded-xl bg-white p-8 shadow">
 
-        <ReportHeader reportId={model.reportId} />
+        <div
+          className={
+            !isUnlocked
+              ? "pointer-events-none select-none opacity-80"
+              : ""
+          }
+        >
 
-        <PropertySection
-          address={model.property.address}
-          dateOfLoss={model.property.dateOfLoss}
-          searchWindowStart={model.property.searchWindowStart}
-          searchWindowEnd={model.property.searchWindowEnd}
-        />
+          <ReportHeader reportId={model.reportId} />
 
-        <ActivitySummary
-          summary={model.summary.description}
-          findings={model.summary.findings}
-        />
+          <PropertySection
+            address={model.property.address}
+            dateOfLoss={model.property.dateOfLoss}
+            searchWindowStart={model.property.searchWindowStart}
+            searchWindowEnd={model.property.searchWindowEnd}
+          />
 
-        <MetricsRow
-          highestWind={Number(model.metrics[2].value) || 0}
-          largestHail={Number(model.metrics[1].value) || 0}
-          tornadoReports={Number(model.metrics[3].value) || 0}
-          warningCount={Number(model.metrics[4].value) || 0}
-          totalEvents={Number(model.metrics[5].value) || 0}
-        />
+          <ActivitySummary
+            summary={model.summary.description}
+            findings={model.summary.findings}
+          />
+
+          <MetricsRow
+            closestEvent={
+              model.metrics[0].value === "--"
+                ? null
+                : Number(model.metrics[0].value)
+            }
+
+            closestHail={
+              model.metrics[1].value === "--"
+                ? null
+                : Number(model.metrics[1].value)
+            }
+
+            largestHail={
+              model.metrics[2].value === "--"
+                ? 0
+                : Number(model.metrics[2].value)
+            }
+
+            highestWind={
+              model.metrics[3].value === "--"
+                ? 0
+                : Number(model.metrics[3].value)
+            }
+
+            tornadoReports={Number(model.metrics[4].value) || 0}
+
+            totalEvents={Number(model.metrics[5].value) || 0}
+          />
+
+          <div
+  className={
+    !isUnlocked
+      ? "relative pointer-events-none select-none opacity-70"
+      : ""
+  }
+>
 
         <div className="mt-8 grid grid-cols-[430px_1fr] gap-8">
 
-          <ActivityMap
-            address={model.property.address}
-            latitude={model.map.propertyLatitude}
-            longitude={model.map.propertyLongitude}
-            events={model.timeline}
+            <ActivityMap
+              address={model.property.address}
+              latitude={model.map.propertyLatitude}
+              longitude={model.map.propertyLongitude}
+              events={model.timeline}
+            />
+
+            <Timeline
+              events={model.timeline}
+            />
+
+          </div>
+
+          <WeatherContext
+            summary={model.context}
           />
 
-          <Timeline
-            events={model.timeline}
-          />
+          <DataSources />
+
+          <Disclaimer />
 
         </div>
 
-        <WeatherContext
-          summary={model.context}
-        />
+        </div>
 
-        <DataSources />
-
-        <Disclaimer />
+        {!isUnlocked && (
+          <ReportPaywall />
+        )}
 
       </div>
 

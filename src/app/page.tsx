@@ -19,6 +19,7 @@ export default function Home() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionMessage, setSubmissionMessage] = useState("");
     const [weatherReport, setWeatherReport] = useState<any>(null);
+    const [isUnlocked, setIsUnlocked] = useState(false);
 
       async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -271,7 +272,10 @@ export default function Home() {
       {weatherReport && (
         <section className="bg-slate-100 py-20">
           <div className="mx-auto max-w-7xl px-6">
-            <WeatherSnapshotReport report={weatherReport} />
+            <WeatherSnapshotReport
+              report={weatherReport}
+              isUnlocked={isUnlocked}
+            />
           </div>
         </section>
       )}

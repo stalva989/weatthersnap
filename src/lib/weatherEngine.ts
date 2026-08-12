@@ -40,8 +40,11 @@ export type UnifiedWeatherEvent = {
   }[];
 };
 
+import type { NwsWarning } from "./nwsWarnings";
+
 type BuildWeatherEventsRequest = {
   stormEvents: StormEvent[];
+  nwsWarnings: NwsWarning[];
   dateOfLoss: string;
 };
 
@@ -190,6 +193,7 @@ function buildSummary(
 
 export function buildUnifiedWeatherEvents({
   stormEvents,
+  nwsWarnings,
   dateOfLoss,
 }: BuildWeatherEventsRequest): UnifiedWeatherEvent[] {
   const events = stormEvents.map(

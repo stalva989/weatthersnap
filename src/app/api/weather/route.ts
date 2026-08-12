@@ -3,6 +3,8 @@ import { getNoaaGridPoint } from "@/lib/noaa";
 import { getHistoricalWeather } from "@/lib/historicalWeather";
 import { getStormEvents } from "@/lib/stormEvents";
 import { buildUnifiedWeatherEvents } from "@/lib/weatherEngine";
+import { getNwsWarnings } from "@/lib/nwsWarnings";
+import { getSpcStormReports } from "@/lib/spcReports";
 
 export async function POST(request: Request) {
   try {
@@ -42,6 +44,23 @@ export async function POST(request: Request) {
       historicalWeather.windowEnd
     );
 
+    const spcReports = await getSpcStormReports(
+      historicalWeather.windowStart,
+      historicalWeather.windowEnd
+    );
+
+    console.log("SPC Reports:", spcReports.length);
+
+    const nwsWarnings = await getNwsWarnings(
+      body.latitude,
+      body.longitude
+    );
+
+    console.log(
+      "NWS Warnings:",
+      nwsWarnings.map((w) => w.event)
+    );
+
     const events = buildUnifiedWeatherEvents({
       stormEvents,
       dateOfLoss: body.dateOfLoss,
@@ -56,7 +75,8 @@ export async function POST(request: Request) {
 
       // Temporary until we merge the pipelines
       events,
-
+      spcReports,
+      nwsWarnings,
       snapshot: historicalWeather.snapshot,
     }); 
   } catch (error) {
