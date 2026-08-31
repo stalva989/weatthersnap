@@ -115,7 +115,9 @@ export default function WeatherSnapshotReport({
         </div>
 
         {!isUnlocked && (
-          <ReportPaywall />
+          <ReportPaywall
+            reportId={report.reportId}
+          />
         )}
 
       </div>

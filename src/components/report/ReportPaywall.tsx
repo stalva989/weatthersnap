@@ -1,18 +1,38 @@
 "use client";
 
+import { useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 );
 
-export default function ReportPaywall() {
+type Props = {
+  reportId: string;
+};
+
+export default function ReportPaywall({
+  reportId,
+}: Props) {
+  const [isLoading, setIsLoading] =
+    useState(false);
+
   async function handleCheckout() {
     try {
+      setIsLoading(true);
+
       const response = await fetch(
         "/api/create-checkout-session",
         {
           method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            reportId,
+          }),
         }
       );
 
@@ -20,7 +40,8 @@ export default function ReportPaywall() {
 
       if (!response.ok) {
         throw new Error(
-          data.error ?? "Unable to start checkout."
+          data.error ??
+            "Unable to start checkout."
         );
       }
 
@@ -33,12 +54,17 @@ export default function ReportPaywall() {
       }
 
       window.location.href = data.url;
-
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Stripe checkout failed:",
+        error
+      );
+
       alert(
         "Unable to start checkout. Please try again."
       );
+
+      setIsLoading(false);
     }
   }
 
@@ -66,7 +92,7 @@ export default function ReportPaywall() {
 
           <div>✓ Documented Weather Events</div>
 
-          <div>✓ Printable & Shareable Format</div>
+          <div>✓ Printable &amp; Shareable Format</div>
 
           <div>✓ Official Government Data Sources</div>
 
@@ -74,9 +100,12 @@ export default function ReportPaywall() {
 
         <button
           onClick={handleCheckout}
-          className="mt-8 w-full rounded-xl bg-orange-500 px-6 py-4 text-lg font-bold text-white transition hover:bg-orange-600"
+          disabled={isLoading}
+          className="mt-8 w-full rounded-xl bg-orange-500 px-6 py-4 text-lg font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Unlock for $5.99
+          {isLoading
+            ? "Opening Secure Checkout..."
+            : "Unlock for $5.99"}
         </button>
 
       </div>

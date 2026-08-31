@@ -2,6 +2,7 @@ import { ReportModel } from "@/types/report";
 
 const PRIMARY_RADIUS_MILES = 5;
 const FALLBACK_RADIUS_MILES = 25;
+const REVIEW_WINDOW_DAYS = 31;
 
 function getDaysFromLoss(
   eventDate: string,
@@ -48,7 +49,9 @@ function getMapEventType(event: any): string {
     return event.type;
   }
 
-  const type = String(event.eventType ?? "").toLowerCase();
+  const type = String(
+    event.eventType ?? ""
+  ).toLowerCase();
 
   if (type.includes("hail")) return "hail";
   if (type.includes("wind")) return "wind";
@@ -78,7 +81,9 @@ function getMapEventType(event: any): string {
   return "other";
 }
 
-function buildStormEventSummary(event: any): string {
+function buildStormEventSummary(
+  event: any
+): string {
   const eventType =
     event.eventType ?? "Weather Event";
 
@@ -94,7 +99,8 @@ function buildStormEventSummary(event: any): string {
     event.magnitude !== undefined
   ) {
     if (eventType === "Hail") {
-      description = `${event.magnitude}" Hail`;
+      description =
+        `${event.magnitude}" Hail`;
     } else if (
       eventType === "Thunderstorm Wind" ||
       eventType === "High Wind" ||
@@ -121,8 +127,12 @@ export function buildReportModel(
   report: any
 ): ReportModel {
   const snapshot = report?.snapshot;
-  const allStormEvents = report?.events ?? [];
+
+  const allStormEvents =
+    report?.events ?? [];
+
   const request = report?.request;
+
   const historical =
     report?.historicalWeather ?? {};
 
@@ -130,33 +140,56 @@ export function buildReportModel(
     historical.dailySummaries ?? [];
 
   /*
-   * NORMAL SNAPSHOT:
-   * Show events within 5 miles.
+   * DATA AVAILABILITY
+   *
+   * Daily station observations give us an
+   * important distinction between:
+   *
+   * 1. Weather data was returned but no
+   *    qualifying nearby storm event exists.
+   *
+   * 2. No daily observation data was returned.
    */
-  const nearbyEvents = allStormEvents.filter(
-    (event: any) =>
-      typeof event.distanceMiles === "number" &&
-      event.distanceMiles <= PRIMARY_RADIUS_MILES
-  );
-
-  const closestEvent =
-  nearbyEvents.length > 0
-    ? Math.min(
-        ...nearbyEvents.map(
-          (event: any) => event.distanceMiles
-        )
-      )
-    : null;
+  const hasObservationData =
+    observations.length > 0;
 
   /*
-   * FALLBACK:
-   * If nothing happened within 5 miles,
-   * show only the single closest documented
-   * event within 25 miles.
+   * PRIMARY WEATHER AREA
+   *
+   * Normal WeatherSnap event results include
+   * documented events within 5 miles.
    */
-  let displayedEvents = nearbyEvents;
+  const nearbyEvents =
+    allStormEvents.filter(
+      (event: any) =>
+        typeof event.distanceMiles ===
+          "number" &&
+        event.distanceMiles <=
+          PRIMARY_RADIUS_MILES
+    );
 
-  let usingClosestEventFallback = false;
+  const closestEvent =
+    nearbyEvents.length > 0
+      ? Math.min(
+          ...nearbyEvents.map(
+            (event: any) =>
+              event.distanceMiles
+          )
+        )
+      : null;
+
+  /*
+   * FALLBACK AREA
+   *
+   * If there are no documented events within
+   * 5 miles, show the single closest documented
+   * event within 25 miles for context.
+   */
+  let displayedEvents =
+    nearbyEvents;
+
+  let usingClosestEventFallback =
+    false;
 
   if (nearbyEvents.length === 0) {
     const fallbackCandidates =
@@ -174,12 +207,15 @@ export function buildReportModel(
             b.distanceMiles
         );
 
-    if (fallbackCandidates.length > 0) {
+    if (
+      fallbackCandidates.length > 0
+    ) {
       displayedEvents = [
         fallbackCandidates[0],
       ];
 
-      usingClosestEventFallback = true;
+      usingClosestEventFallback =
+        true;
     }
   }
 
@@ -199,9 +235,8 @@ export function buildReportModel(
   /*
    * HAIL METRICS
    *
-   * Use nearby events only.
-   * A hail report 20 miles away should not
-   * populate the normal Snapshot hail boxes.
+   * Only hail events within the primary
+   * 5-mile area populate these metrics.
    */
   const nearbyHailEvents =
     nearbyEvents.filter(
@@ -238,7 +273,7 @@ export function buildReportModel(
     ).length;
 
   /*
-   * BUILD REPORT TIMELINE
+   * REPORT TIMELINE
    */
   const timeline =
     displayedEvents.map(
@@ -249,12 +284,8 @@ export function buildReportModel(
 
         date: event.date,
 
-        /*
-         * IMPORTANT:
-         * Mapbox uses this field to assign
-         * event marker colors.
-         */
-        type: getMapEventType(event),
+        type:
+          getMapEventType(event),
 
         summary:
           buildStormEventSummary(event),
@@ -275,8 +306,11 @@ export function buildReportModel(
                   event.date
               ),
 
-        latitude: event.latitude,
-        longitude: event.longitude,
+        latitude:
+          event.latitude,
+
+        longitude:
+          event.longitude,
 
         eventType:
           event.eventType,
@@ -308,18 +342,31 @@ export function buildReportModel(
     );
 
   /*
-   * FACTUAL SUMMARY LANGUAGE
+   * FACTUAL REPORT SUMMARY
    */
   let summaryTitle =
-    "No Documented Nearby Weather Events";
+    "No Documented Significant Weather Events";
 
   let summaryDescription =
-    "No documented storm events were identified within 5 miles of the property during the selected 3-day review window.";
+    `WeatherSnap reviewed the selected Date of Loss and the surrounding ±15-day period (${REVIEW_WINDOW_DAYS} calendar days). No qualifying documented storm events were identified within 5 miles of the property during this review period.`;
 
   let context =
-    "No documented storm events were identified within 5 miles of the property during the selected review window.";
+    "Available weather records were reviewed for the selected period. No qualifying documented storm events were identified within 5 miles of the property.";
 
-  if (nearbyEvents.length > 0) {
+  /*
+   * Data availability is different from
+   * a legitimate no-event result.
+   */
+  if (!hasObservationData) {
+    summaryTitle =
+      "Weather Data Availability Limited";
+
+    summaryDescription =
+      `Daily weather observation data was not available for the selected Date of Loss and surrounding ±15-day review period. The absence of observations should not be interpreted as confirmation that no weather activity occurred.`;
+
+    context =
+      "Available data for the selected review period was limited. No conclusion regarding the absence of weather activity should be based solely on unavailable observation records.";
+  } else if (nearbyEvents.length > 0) {
     summaryTitle =
       "Documented Weather Activity Identified";
 
@@ -328,10 +375,10 @@ export function buildReportModel(
         nearbyEvents.length === 1
           ? ""
           : "s"
-      } identified within 5 miles of the property during the selected 3-day review window.`;
+      } identified within 5 miles of the property during the selected ${REVIEW_WINDOW_DAYS}-day review period.`;
 
     context =
-      "Documented weather activity was identified near the property during the selected review window. Event locations, magnitudes, distances, and source information are shown where available.";
+      "Documented weather activity was identified near the property during the selected review period. Event locations, magnitudes, distances, and source information are shown where available.";
   } else if (
     usingClosestEventFallback &&
     displayedEvents.length > 0
@@ -343,20 +390,22 @@ export function buildReportModel(
       "No Documented Events Within 5 Miles";
 
     summaryDescription =
-      `No documented storm events were identified within 5 miles of the property during the selected 3-day review window. The closest documented event was ${closest.distanceMiles.toFixed(
+      `No documented storm events were identified within 5 miles of the property during the selected ${REVIEW_WINDOW_DAYS}-day review period. The closest documented event was ${closest.distanceMiles.toFixed(
         1
-      )} miles away.`;
+      )} miles from the property.`;
 
     context =
-      `No documented events were identified within 5 miles of the property. For context, the closest documented event during the review window was a ${closest.eventType} approximately ${closest.distanceMiles.toFixed(
+      `No documented events were identified within 5 miles of the property. For additional context, the closest documented event during the review period was a ${closest.eventType} approximately ${closest.distanceMiles.toFixed(
         1
-      )} miles away.`;
+      )} miles from the property.`;
   }
 
   return {
-    reportId: `WS-${Date.now()
-      .toString()
-      .slice(-8)}`,
+    reportId:
+      report?.reportId ??
+      `WS-${Date.now()
+        .toString()
+        .slice(-8)}`,
 
     property: {
       address:
@@ -373,70 +422,96 @@ export function buildReportModel(
     },
 
     summary: {
-      title: summaryTitle,
+      title:
+        summaryTitle,
 
       description:
         summaryDescription,
 
-      findings: timeline
-        .slice(0, 5)
-        .map((event: any) => ({
-          summary: event.summary,
-          date: event.date,
-        })),
+      findings:
+        timeline
+          .slice(0, 5)
+          .map((event: any) => ({
+            summary:
+              event.summary,
+
+            date:
+              event.date,
+          })),
     },
 
     metrics: [
-        {
-            title: "Closest Event",
-            value:
-            closestEvent !== null
-                ? closestEvent.toFixed(1)
-                : "--",
-            subtitle: "mi",
-        },
+      {
+        title: "Closest Event",
+        value:
+          closestEvent !== null
+            ? closestEvent.toFixed(1)
+            : "--",
+        subtitle: "mi",
+      },
 
-        {
-            title: "Closest Hail",
-            value:
-            closestHail !== null
-                ? closestHail.toFixed(1)
-                : "--",
-            subtitle: "mi",
-        },
+      {
+        title: "Closest Hail",
+        value:
+          closestHail !== null
+            ? closestHail.toFixed(1)
+            : "--",
+        subtitle: "mi",
+      },
 
-        {
-            title: "Largest Hail",
-            value:
-            largestHail > 0
-                ? largestHail.toFixed(2)
-                : "--",
-            subtitle: "in",
-        },
+      {
+        title: "Largest Hail",
+        value:
+          largestHail > 0
+            ? largestHail.toFixed(2)
+            : "--",
+        subtitle: "in",
+      },
 
-        {
-            title: "Highest Wind",
-            value:
-            highestWind > 0
-                ? highestWind.toFixed(0)
-                : "--",
-            subtitle: "mph",
-        },
+      {
+        title: "Highest Wind",
+        value:
+          highestWind > 0
+            ? highestWind.toFixed(0)
+            : "--",
+        subtitle: "mph",
+      },
 
-        {
-            title: "Tornado Reports",
-            value: tornadoReports,
-        },
+      {
+        title: "Tornado Reports",
+        value:
+          tornadoReports,
+      },
 
-        {
-            title: "Documented Events",
-            value: nearbyEvents.length,
-        },
+      {
+        title: "Documented Events",
+        value:
+          nearbyEvents.length,
+      },
     ],
 
     map: {
-      radiusMiles:
-        PRIMARY_RADIUS_MILES,
+      centerLatitude:
+        request?.latitude ?? 0,
+
+      centerLongitude:
+        request?.longitude ?? 0,
+
+      zoom: 11,
+
+      bounds: {
+        north:
+          (request?.latitude ?? 0) + 0.08,
+
+        south:
+          (request?.latitude ?? 0) - 0.08,
+
+        east:
+          (request?.longitude ?? 0) + 0.08,
+
+        west:
+          (request?.longitude ?? 0) - 0.08,
+      },
 
       propertyLatitude:
         request?.latitude ?? 0,

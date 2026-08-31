@@ -63,6 +63,7 @@ export async function POST(request: Request) {
 
     const events = buildUnifiedWeatherEvents({
       stormEvents,
+      nwsWarnings,
       dateOfLoss: body.dateOfLoss,
     });
 

@@ -5,10 +5,31 @@ export type ReportMetric = {
 };
 
 export type TimelineItem = {
+  id?: string;
+
   date: string;
   summary: string;
+
+  type?: string;
+
   severity: string;
+
   daysFromLoss: number;
+
+  latitude?: number;
+  longitude?: number;
+
+  eventType?: string;
+
+  magnitude?: number | null;
+  magnitudeType?: string | null;
+
+  distanceMiles?: number;
+
+  source?: string;
+
+  narrative?: string;
+
   findings: {
     title: string;
   }[];
