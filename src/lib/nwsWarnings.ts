@@ -1,3 +1,8 @@
+type NwsGeometry = {
+  type: string;
+  coordinates: unknown;
+};
+
 export type NwsWarning = {
   id: string;
   event: string;
@@ -6,14 +11,13 @@ export type NwsWarning = {
   issued: string;
   expires: string;
 
-  geometry: GeoJSON.Geometry | null;
+  geometry: NwsGeometry | null;
 };
 
 export async function getNwsWarnings(
   latitude: number,
   longitude: number
 ): Promise<NwsWarning[]> {
-
   const url =
     `https://api.weather.gov/alerts/active?point=${latitude},${longitude}`;
 

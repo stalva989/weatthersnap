@@ -24,9 +24,7 @@ export default function WeatherSnapshotReport({
 
   return (
     <div className="mx-auto max-w-7xl rounded-xl border border-slate-300 bg-slate-100 p-8">
-
       <div className="relative overflow-hidden rounded-xl bg-white p-8 shadow">
-
         <div
           className={
             !isUnlocked
@@ -34,8 +32,18 @@ export default function WeatherSnapshotReport({
               : ""
           }
         >
+          <div className="flex items-start justify-between gap-4">
+            <ReportHeader reportId={model.reportId} />
 
-          <ReportHeader reportId={model.reportId} />
+            {isUnlocked && (
+              <a
+                href={`/api/reports/${model.reportId}/pdf`}
+                className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold !text-white transition hover:bg-slate-700"
+              >
+                Download PDF
+              </a>
+            )}
+          </div>
 
           <PropertySection
             address={model.property.address}
@@ -55,63 +63,57 @@ export default function WeatherSnapshotReport({
                 ? null
                 : Number(model.metrics[0].value)
             }
-
             closestHail={
               model.metrics[1].value === "--"
                 ? null
                 : Number(model.metrics[1].value)
             }
-
             largestHail={
               model.metrics[2].value === "--"
                 ? 0
                 : Number(model.metrics[2].value)
             }
-
             highestWind={
               model.metrics[3].value === "--"
                 ? 0
                 : Number(model.metrics[3].value)
             }
-
-            tornadoReports={Number(model.metrics[4].value) || 0}
-
-            totalEvents={Number(model.metrics[5].value) || 0}
+            tornadoReports={
+              Number(model.metrics[4].value) || 0
+            }
+            totalEvents={
+              Number(model.metrics[5].value) || 0
+            }
           />
 
           <div
-  className={
-    !isUnlocked
-      ? "relative pointer-events-none select-none opacity-70"
-      : ""
-  }
->
+            className={
+              !isUnlocked
+                ? "relative pointer-events-none select-none opacity-70"
+                : ""
+            }
+          >
+            <div className="mt-8 grid grid-cols-[430px_1fr] gap-8">
+              <ActivityMap
+                address={model.property.address}
+                latitude={model.map.propertyLatitude}
+                longitude={model.map.propertyLongitude}
+                events={model.timeline}
+              />
 
-        <div className="mt-8 grid grid-cols-[430px_1fr] gap-8">
+              <Timeline
+                events={model.timeline}
+              />
+            </div>
 
-            <ActivityMap
-              address={model.property.address}
-              latitude={model.map.propertyLatitude}
-              longitude={model.map.propertyLongitude}
-              events={model.timeline}
+            <WeatherContext
+              summary={model.context}
             />
 
-            <Timeline
-              events={model.timeline}
-            />
+            <DataSources />
 
+            <Disclaimer />
           </div>
-
-          <WeatherContext
-            summary={model.context}
-          />
-
-          <DataSources />
-
-          <Disclaimer />
-
-        </div>
-
         </div>
 
         {!isUnlocked && (
@@ -119,9 +121,7 @@ export default function WeatherSnapshotReport({
             reportId={report.reportId}
           />
         )}
-
       </div>
-
     </div>
   );
 }

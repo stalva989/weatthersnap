@@ -3,6 +3,7 @@ import { ReportModel } from "@/types/report";
 const PRIMARY_RADIUS_MILES = 5;
 const FALLBACK_RADIUS_MILES = 25;
 const REVIEW_WINDOW_DAYS = 31;
+const MAX_SNAPSHOT_EVENTS = 6;
 
 function getDaysFromLoss(
   eventDate: string,
@@ -123,6 +124,250 @@ function buildStormEventSummary(
   return description;
 }
 
+/*
+ * SNAPSHOT EVENT CATEGORY
+ *
+ * Used only to keep the limited six-event
+ * Snapshot timeline reasonably representative.
+ */
+function getSnapshotEventCategory(
+  event: any
+): string {
+  const type =
+    getMapEventType(event);
+
+  if (type === "tornado") {
+    return "tornado";
+  }
+
+  if (type === "hail") {
+    return "hail";
+  }
+
+  if (type === "wind") {
+    return "wind";
+  }
+
+  if (type === "lightning") {
+    return "lightning";
+  }
+
+  if (type === "flood") {
+    return "flood";
+  }
+
+  if (type === "warning") {
+    return "warning";
+  }
+
+  return "other";
+}
+
+/*
+ * DISPLAY DUPLICATE KEY
+ *
+ * This does NOT remove events from the report
+ * count. It only prevents visually identical
+ * records from consuming multiple limited
+ * timeline positions.
+ */
+function getDisplayDuplicateKey(
+  event: any
+): string {
+  const date =
+    String(event.date ?? "");
+
+  const type =
+    String(
+      event.eventType ??
+        event.type ??
+        ""
+    ).toLowerCase();
+
+  const magnitude =
+    event.magnitude === null ||
+    event.magnitude === undefined
+      ? ""
+      : String(event.magnitude);
+
+  const unit =
+    String(
+      event.magnitudeUnit ??
+        event.magnitudeType ??
+        ""
+    ).toLowerCase();
+
+  const distance =
+    typeof event.distanceMiles ===
+    "number"
+      ? event.distanceMiles.toFixed(1)
+      : "";
+
+  return [
+    date,
+    type,
+    magnitude,
+    unit,
+    distance,
+  ].join("|");
+}
+
+/*
+ * SELECT SNAPSHOT EVENTS
+ *
+ * Metrics continue to use every documented
+ * nearby event.
+ *
+ * The one-page Snapshot timeline/map displays
+ * no more than six representative records.
+ */
+function selectSnapshotEvents(
+  events: any[],
+  dateOfLoss: string
+): any[] {
+  if (
+    events.length <=
+    MAX_SNAPSHOT_EVENTS
+  ) {
+    return events;
+  }
+
+  /*
+   * Remove obvious duplicate display records.
+   */
+  const uniqueEvents =
+    Array.from(
+      new Map(
+        events.map((event) => [
+          getDisplayDuplicateKey(event),
+          event,
+        ])
+      ).values()
+    );
+
+  /*
+   * Rank primarily by closeness to the Date
+   * of Loss, then geographic distance.
+   */
+  const rankedEvents =
+    [...uniqueEvents].sort(
+      (a: any, b: any) => {
+        const aDays =
+          Math.abs(
+            typeof a.daysFromLoss ===
+              "number"
+              ? a.daysFromLoss
+              : getDaysFromLoss(
+                  a.date,
+                  dateOfLoss
+                )
+          );
+
+        const bDays =
+          Math.abs(
+            typeof b.daysFromLoss ===
+              "number"
+              ? b.daysFromLoss
+              : getDaysFromLoss(
+                  b.date,
+                  dateOfLoss
+                )
+          );
+
+        if (aDays !== bDays) {
+          return aDays - bDays;
+        }
+
+        const aDistance =
+          typeof a.distanceMiles ===
+          "number"
+            ? a.distanceMiles
+            : Number.POSITIVE_INFINITY;
+
+        const bDistance =
+          typeof b.distanceMiles ===
+          "number"
+            ? b.distanceMiles
+            : Number.POSITIVE_INFINITY;
+
+        return (
+          aDistance -
+          bDistance
+        );
+      }
+    );
+
+  const selected: any[] = [];
+
+  const categoryCounts =
+    new Map<string, number>();
+
+  /*
+   * First pass:
+   *
+   * Limit any one broad event category to
+   * two timeline positions when other event
+   * types are available.
+   */
+  for (const event of rankedEvents) {
+    if (
+      selected.length >=
+      MAX_SNAPSHOT_EVENTS
+    ) {
+      break;
+    }
+
+    const category =
+      getSnapshotEventCategory(
+        event
+      );
+
+    const existingCount =
+      categoryCounts.get(
+        category
+      ) ?? 0;
+
+    if (existingCount >= 2) {
+      continue;
+    }
+
+    selected.push(event);
+
+    categoryCounts.set(
+      category,
+      existingCount + 1
+    );
+  }
+
+  /*
+   * Second pass:
+   *
+   * Fill any remaining positions with the
+   * next closest records regardless of type.
+   */
+  if (
+    selected.length <
+    MAX_SNAPSHOT_EVENTS
+  ) {
+    for (const event of rankedEvents) {
+      if (
+        selected.length >=
+        MAX_SNAPSHOT_EVENTS
+      ) {
+        break;
+      }
+
+      if (selected.includes(event)) {
+        continue;
+      }
+
+      selected.push(event);
+    }
+  }
+
+  return selected;
+}
+
 export function buildReportModel(
   report: any
 ): ReportModel {
@@ -141,23 +386,12 @@ export function buildReportModel(
 
   /*
    * DATA AVAILABILITY
-   *
-   * Daily station observations give us an
-   * important distinction between:
-   *
-   * 1. Weather data was returned but no
-   *    qualifying nearby storm event exists.
-   *
-   * 2. No daily observation data was returned.
    */
   const hasObservationData =
     observations.length > 0;
 
   /*
    * PRIMARY WEATHER AREA
-   *
-   * Normal WeatherSnap event results include
-   * documented events within 5 miles.
    */
   const nearbyEvents =
     allStormEvents.filter(
@@ -180,10 +414,6 @@ export function buildReportModel(
 
   /*
    * FALLBACK AREA
-   *
-   * If there are no documented events within
-   * 5 miles, show the single closest documented
-   * event within 25 miles for context.
    */
   let displayedEvents =
     nearbyEvents;
@@ -217,6 +447,18 @@ export function buildReportModel(
       usingClosestEventFallback =
         true;
     }
+  } else {
+    /*
+     * SMART SNAPSHOT SELECTION
+     *
+     * Only the timeline/map are limited.
+     * Metrics continue to use all nearbyEvents.
+     */
+    displayedEvents =
+      selectSnapshotEvents(
+        nearbyEvents,
+        request?.dateOfLoss ?? ""
+      );
   }
 
   /*
@@ -234,9 +476,6 @@ export function buildReportModel(
 
   /*
    * HAIL METRICS
-   *
-   * Only hail events within the primary
-   * 5-mile area populate these metrics.
    */
   const nearbyHailEvents =
     nearbyEvents.filter(
@@ -353,10 +592,6 @@ export function buildReportModel(
   let context =
     "Available weather records were reviewed for the selected period. No qualifying documented storm events were identified within 5 miles of the property.";
 
-  /*
-   * Data availability is different from
-   * a legitimate no-event result.
-   */
   if (!hasObservationData) {
     summaryTitle =
       "Weather Data Availability Limited";
@@ -469,7 +704,7 @@ export function buildReportModel(
       },
 
       {
-        title: "Highest Wind",
+        title: "Peak Station Wind",
         value:
           highestWind > 0
             ? highestWind.toFixed(0)
@@ -530,4 +765,4 @@ export function buildReportModel(
       snapshot?.conclusion ||
       "",
   };
-}
+} 
