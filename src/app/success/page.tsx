@@ -1,5 +1,10 @@
 import Stripe from "stripe";
+
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { resend } from "@/lib/resend";
+import { buildReportModel } from "@/lib/reportBuilder";
+import { generateWeatherSnapPdf } from "@/lib/pdfGenerator";
+
 import WeatherSnapshotReport from "@/components/WeatherSnapshotReport";
 
 const stripe = new Stripe(
@@ -123,7 +128,7 @@ export default async function SuccessPage({
     } = await supabaseAdmin
       .from("weather_reports")
       .select(
-        "report_id, address, date_of_loss, report_data, payment_status"
+        "report_id, address, date_of_loss, report_data, payment_status, email_sent_at"
       )
       .eq("report_id", reportId)
       .single();
@@ -136,6 +141,149 @@ export default async function SuccessPage({
 
       throw new Error(
         "Unable to retrieve Weather Snapshot."
+      );
+    }
+
+    /*
+     * Send the purchased PDF once.
+     *
+     * Stripe Checkout provides the customer's
+     * email after successful payment.
+     */
+    const customerEmail =
+      session.customer_details?.email ??
+      session.customer_email;
+
+    if (
+      customerEmail &&
+      !savedReport.email_sent_at
+    ) {
+      try {
+        const reportData = {
+          ...savedReport.report_data,
+
+          /*
+           * Guarantee the permanent Supabase
+           * Report ID is used in the PDF.
+           */
+          reportId:
+            savedReport.report_id,
+        };
+
+        const model =
+          buildReportModel(
+            reportData
+          );
+
+        const pdfBytes =
+          await generateWeatherSnapPdf(
+            model
+          );
+
+        const {
+          error: emailError,
+        } =
+          await resend.emails.send({
+            from:
+              "WeatherSnap <reports@weathersnap.app>",
+
+            to: customerEmail,
+
+            subject:
+              `Your WeatherSnap Report — ${savedReport.report_id}`,
+
+            html: `
+              <div style="font-family: Arial, Helvetica, sans-serif; color: #1f2937; line-height: 1.6; max-width: 620px; margin: 0 auto;">
+                <h1 style="color: #0e213b; font-size: 24px; margin-bottom: 6px;">
+                  WeatherSnap
+                </h1>
+
+                <p style="color: #66717d; margin-top: 0;">
+                  Weather Intelligence. Instantly.
+                </p>
+
+                <p>
+                  Thank you for your purchase. Your Weather Snapshot is attached to this email.
+                </p>
+
+                <p>
+                  <strong>Property:</strong><br />
+                  ${savedReport.address}
+                </p>
+
+                <p>
+                  <strong>Report ID:</strong><br />
+                  ${savedReport.report_id}
+                </p>
+
+                <p>
+                  You can verify this report at:
+                  <br />
+                  <a href="https://weathersnap.app/verify/${savedReport.report_id}">
+                    weathersnap.app/verify/${savedReport.report_id}
+                  </a>
+                </p>
+
+                <p style="font-size: 12px; color: #66717d; margin-top: 28px;">
+                  WeatherSnap summarizes documented weather information from available governmental and meteorological sources.
+                </p>
+              </div>
+            `,
+
+            attachments: [
+              {
+                filename:
+                  `WeatherSnap-${savedReport.report_id}.pdf`,
+
+                content:
+                  Buffer.from(
+                    pdfBytes
+                  ),
+              },
+            ],
+          });
+
+        if (emailError) {
+          console.error(
+            "WeatherSnap purchase email failed:",
+            emailError
+          );
+        } else {
+          const {
+            error: emailUpdateError,
+          } =
+            await supabaseAdmin
+              .from("weather_reports")
+              .update({
+                email_sent_at:
+                  new Date().toISOString(),
+              })
+              .eq(
+                "report_id",
+                reportId
+              );
+
+          if (emailUpdateError) {
+            console.error(
+              "Unable to save email_sent_at:",
+              emailUpdateError
+            );
+          }
+        }
+      } catch (emailError) {
+        /*
+         * Email failure must never prevent
+         * a paid customer from seeing the
+         * report they purchased.
+         */
+        console.error(
+          "WeatherSnap email delivery failed:",
+          emailError
+        );
+      }
+    } else if (!customerEmail) {
+      console.error(
+        "Stripe Checkout Session does not contain a customer email."
       );
     }
 
