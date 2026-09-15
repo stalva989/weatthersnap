@@ -1,11 +1,10 @@
 import Stripe from "stripe";
+import { redirect } from "next/navigation";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { resend } from "@/lib/resend";
 import { buildReportModel } from "@/lib/reportBuilder";
 import { generateWeatherSnapPdf } from "@/lib/pdfGenerator";
-
-import WeatherSnapshotReport from "@/components/WeatherSnapshotReport";
 
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY!
@@ -37,6 +36,8 @@ export default async function SuccessPage({
       </main>
     );
   }
+
+  let purchasedReportId: string | null = null;
 
   try {
     /*
@@ -287,28 +288,17 @@ export default async function SuccessPage({
       );
     }
 
-    return (
-      <main className="min-h-screen bg-slate-50">
+    /*
+     * Payment is verified, the report is
+     * unlocked, and email processing is done.
+     *
+     * Store the destination outside the try
+     * block so Next.js redirect behavior is
+     * not accidentally caught below.
+     */
+    purchasedReportId =
+      savedReport.report_id;
 
-        <div className="border-b border-emerald-200 bg-emerald-50 px-6 py-4">
-          <div className="mx-auto max-w-6xl text-center">
-            <p className="font-semibold text-emerald-800">
-              Payment Verified — Weather Snapshot Unlocked
-            </p>
-
-            <p className="mt-1 text-sm text-emerald-700">
-              Report {savedReport.report_id}
-            </p>
-          </div>
-        </div>
-
-        <WeatherSnapshotReport
-          report={savedReport.report_data}
-          isUnlocked={true}
-        />
-
-      </main>
-    );
   } catch (error) {
     console.error(
       "WeatherSnap payment verification failed:",
@@ -332,4 +322,19 @@ export default async function SuccessPage({
       </main>
     );
   }
+
+  /*
+   * Redirect only after leaving the try/catch.
+   *
+   * Next.js redirect() intentionally interrupts
+   * rendering, so it should not be caught by our
+   * payment error handler.
+   */
+  if (purchasedReportId) {
+    redirect(
+      `/report/${purchasedReportId}`
+    );
+  }
+
+  return null;
 }
