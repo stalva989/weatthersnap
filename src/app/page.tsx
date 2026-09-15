@@ -3,6 +3,7 @@
 import { useState } from "react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import WeatherSnapshotReport from "@/components/WeatherSnapshotReport";
+import WeatherSnapLogo from "@/components/WeatherSnapLogo";
 
 type SelectedAddress = {
   formattedAddress: string;
@@ -195,23 +196,8 @@ export default function Home() {
       <header className="border-b border-[var(--border)] bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
 
-          <a
-            href="/"
-            className="flex items-center gap-3"
-          >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--navy)] text-lg font-bold text-white">
-              W
-            </div>
-
-            <div>
-              <p className="font-[var(--font-heading)] text-xl font-bold tracking-tight text-[var(--navy)]">
-                WeatherSnap
-              </p>
-
-              <p className="text-xs text-slate-500">
-                Weather Intelligence. Instantly.
-              </p>
-            </div>
+          <a href="/">
+            <WeatherSnapLogo />
           </a>
 
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
