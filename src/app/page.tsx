@@ -4,6 +4,7 @@ import { useState } from "react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import WeatherSnapshotReport from "@/components/WeatherSnapshotReport";
 import WeatherSnapLogo from "@/components/WeatherSnapLogo";
+import WeatherLoadingScreen from "@/components/WeatherLoadingScreen";
 
 type SelectedAddress = {
   formattedAddress: string;
@@ -192,6 +193,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[var(--background)]">
+
+      {/* FULL-SCREEN WEATHER LOADING EXPERIENCE */}
+
+      {isSubmitting && <WeatherLoadingScreen />}
 
       {/* HEADER */}
 
