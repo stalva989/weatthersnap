@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
-import WeatherSnapshotReport from "@/components/WeatherSnapshotReport";
 import WeatherSnapLogo from "@/components/WeatherSnapLogo";
 import WeatherLoadingScreen from "@/components/WeatherLoadingScreen";
 
@@ -33,15 +32,6 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] =
     useState(false);
 
-  const [submissionMessage, setSubmissionMessage] =
-    useState("");
-
-  const [weatherReport, setWeatherReport] =
-    useState<any>(null);
-
-  const [isUnlocked, setIsUnlocked] =
-    useState(false);
-
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
   ) {
@@ -62,9 +52,7 @@ export default function Home() {
     }
 
     setFormError("");
-    setSubmissionMessage("");
     setIsSubmitting(true);
-    setIsUnlocked(false);
 
     try {
       /*
@@ -107,8 +95,8 @@ export default function Home() {
       /*
        * STEP 3
        * Add the Report ID to the exact
-       * data object that will be previewed
-       * and eventually converted to PDF.
+       * data object that will eventually
+       * become the paid report and PDF.
        */
       const reportWithId = {
         ...data,
@@ -117,8 +105,7 @@ export default function Home() {
 
       /*
        * STEP 4
-       * Save report to Supabase through
-       * our server-side API.
+       * Save the exact report to Supabase.
        */
       const saveResponse =
         await fetch("/api/reports", {
@@ -164,15 +151,13 @@ export default function Home() {
 
       /*
        * STEP 5
-       * Show the saved report preview.
+       * Navigate to the dedicated report page.
+       *
+       * The loading screen remains visible
+       * until the browser leaves this page.
        */
-      setWeatherReport(
-        reportWithId
-      );
-
-      setSubmissionMessage(
-        "Weather Snapshot generated successfully."
-      );
+      window.location.href =
+        `/report/${reportId}`;
 
     } catch (error) {
       console.error(
@@ -186,7 +171,6 @@ export default function Home() {
           : "Unable to process the weather request."
       );
 
-    } finally {
       setIsSubmitting(false);
     }
   }
@@ -497,15 +481,6 @@ export default function Home() {
                     : "Check Weather Activity"}
                 </button>
 
-                {submissionMessage && (
-                  <div
-                    className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800"
-                    role="status"
-                  >
-                    {submissionMessage}
-                  </div>
-                )}
-
               </form>
 
               <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-4">
@@ -531,26 +506,6 @@ export default function Home() {
         </div>
 
       </section>
-
-      {/* EXISTING REPORT PREVIEW */}
-
-      {weatherReport && (
-        <section
-          id="report-preview"
-          className="bg-slate-100 py-20"
-        >
-
-          <div className="mx-auto max-w-7xl px-6">
-
-            <WeatherSnapshotReport
-              report={weatherReport}
-              isUnlocked={isUnlocked}
-            />
-
-          </div>
-
-        </section>
-      )}
 
       {/* HOW IT WORKS */}
 
