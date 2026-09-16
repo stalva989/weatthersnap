@@ -35,22 +35,59 @@ export default async function ReportPreviewPage() {
     return (
       <main className="min-h-screen bg-slate-50">
 
+        {/* HEADER */}
+
         <header className="border-b border-slate-200 bg-white">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+
             <a href="/">
               <WeatherSnapLogo />
             </a>
 
+            <nav className="hidden items-center gap-8 text-sm font-semibold text-[var(--navy)] md:flex">
+
+              <a
+                href="/#how-it-works"
+                className="transition hover:text-[var(--storm-blue)]"
+              >
+                How It Works
+              </a>
+
+              <a
+                href="/report-preview"
+                className="rounded-lg bg-[var(--storm-blue)] px-4 py-2 font-semibold !text-[#EAF6FF] shadow-sm"
+              >
+                Report Preview
+              </a>
+
+              <a
+                href="/learn"
+                className="transition hover:text-[var(--storm-blue)]"
+              >
+                Learn
+              </a>
+
+              <a
+                href="/faq"
+                className="transition hover:text-[var(--storm-blue)]"
+              >
+                FAQ
+              </a>
+
+            </nav>
+
             <a
               href="/#order"
-              className="rounded-xl bg-[var(--orange)] px-5 py-3 text-sm font-bold text-white"
+              className="rounded-xl bg-[var(--orange)] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-600"
             >
               Get a Snapshot
             </a>
+
           </div>
         </header>
 
         <div className="mx-auto max-w-2xl px-6 py-20 text-center">
+
           <h1 className="text-3xl font-bold text-[var(--navy)]">
             Sample Report Unavailable
           </h1>
@@ -59,6 +96,7 @@ export default async function ReportPreviewPage() {
             The WeatherSnap sample report could not be
             loaded. Please try again later.
           </p>
+
         </div>
 
       </main>
@@ -97,9 +135,16 @@ export default async function ReportPreviewPage() {
 
             <a
               href="/report-preview"
-              className="text-[var(--storm-blue)]"
+              className="rounded-lg bg-[var(--storm-blue)] px-4 py-2 font-semibold !text-[#EAF6FF] shadow-sm"
             >
               Report Preview
+            </a>
+
+            <a
+              href="/learn"
+              className="transition hover:text-[var(--storm-blue)]"
+            >
+              Learn
             </a>
 
             <a

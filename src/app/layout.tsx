@@ -13,12 +13,68 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://weathersnap.app"),
+
   title: {
-    default: "WeatherSnap",
+    default: "WeatherSnap | Historical Weather Reports for Properties",
     template: "%s | WeatherSnap",
   },
+
   description:
-    "Instant severe weather intelligence for property investigations.",
+    "Check documented hail, wind, tornado, and historical weather activity near a property. Generate a Weather Snapshot using authoritative weather data sources.",
+
+  applicationName: "WeatherSnap",
+
+  keywords: [
+    "historical weather",
+    "hail history",
+    "property weather history",
+    "weather date of loss",
+    "hail reports",
+    "wind reports",
+    "storm history",
+    "NOAA storm reports",
+    "property weather report",
+    "insurance weather report",
+  ],
+
+  authors: [
+    {
+      name: "WeatherSnap",
+    },
+  ],
+
+  creator: "WeatherSnap",
+  publisher: "WeatherSnap",
+
+  alternates: {
+    canonical: "/",
+  },
+
+  openGraph: {
+    type: "website",
+    siteName: "WeatherSnap",
+    title: "WeatherSnap | Historical Weather Reports for Properties",
+    description:
+      "Check documented hail, wind, tornado, and historical weather activity near a property.",
+    url: "https://weathersnap.app",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "WeatherSnap | Historical Weather Reports for Properties",
+    description:
+      "Check documented hail, wind, tornado, and historical weather activity near a property.",
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
 };
 
 export default function RootLayout({

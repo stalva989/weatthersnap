@@ -207,6 +207,13 @@ export default function Home() {
             </a>
 
             <a
+              href="/learn"
+              className="transition hover:text-[var(--storm-blue)]"
+            >
+              Learn
+            </a>
+
+            <a
               href="/faq"
               className="transition hover:text-[var(--storm-blue)]"
             >

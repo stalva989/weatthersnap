@@ -153,8 +153,15 @@ export default function FAQPage() {
             </a>
 
             <a
+              href="/learn"
+              className="transition hover:text-[var(--storm-blue)]"
+            >
+              Learn
+            </a>
+
+            <a
               href="/faq"
-              className="text-[var(--storm-blue)]"
+              className="rounded-lg bg-[var(--storm-blue)] px-4 py-2 font-semibold !text-[#EAF6FF] shadow-sm"
             >
               FAQ
             </a>
