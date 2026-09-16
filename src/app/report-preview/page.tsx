@@ -165,6 +165,7 @@ export default async function ReportPreviewPage() {
         <WeatherSnapshotReport
           report={reportData}
           isUnlocked={true}
+          showDownloadButton={false}
         />
 
       </section>

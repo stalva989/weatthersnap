@@ -14,11 +14,13 @@ import { buildReportModel } from "@/lib/reportBuilder";
 type Props = {
   report: any;
   isUnlocked: boolean;
+  showDownloadButton?: boolean;
 };
 
 export default function WeatherSnapshotReport({
   report,
   isUnlocked,
+  showDownloadButton = true,
 }: Props) {
   const model = buildReportModel(report);
 
@@ -35,7 +37,7 @@ export default function WeatherSnapshotReport({
           <div className="flex items-start justify-between gap-4">
             <ReportHeader reportId={model.reportId} />
 
-            {isUnlocked && (
+            {isUnlocked && showDownloadButton && (
               <a
                 href={`/api/reports/${model.reportId}/pdf`}
                 className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold !text-white transition hover:bg-slate-700"
