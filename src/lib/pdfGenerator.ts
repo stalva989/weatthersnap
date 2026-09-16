@@ -18,8 +18,8 @@ const PAGE_WIDTH = 612;
 const PAGE_HEIGHT = 792;
 
 const NAVY = rgb(0.055, 0.13, 0.23);
-const BLUE = rgb(0.10, 0.34, 0.62);
-const ORANGE = rgb(0.94, 0.39, 0.08);
+const BLUE = rgb(0.18, 0.61, 1);
+const ORANGE = rgb(1, 0.54, 0);
 
 const DARK = rgb(0.12, 0.15, 0.20);
 const GRAY = rgb(0.39, 0.44, 0.50);
@@ -175,6 +175,204 @@ function drawSectionLabel(
     size: 7,
     font,
     color: NAVY,
+  });
+}
+
+/*
+ * WEATHERSNAP RADAR LOGO
+ *
+ * Vector recreation of the approved website radar mark.
+ * Keeping this native to pdf-lib means the logo remains
+ * crisp at any PDF zoom level.
+ */
+
+function drawWeatherSnapRadarLogo(
+  page: PDFPage,
+  x: number,
+  y: number,
+  size: number
+) {
+  const centerX = x + size / 2;
+  const centerY = y + size / 2;
+
+  const scale = size / 64;
+
+  const radarBlue =
+    rgb(46 / 255, 155 / 255, 1);
+
+  const radarOrange =
+    rgb(1, 138 / 255, 0);
+
+  const radarLightOrange =
+    rgb(1, 179 / 255, 71 / 255);
+
+  /*
+   * Radar background
+   */
+
+  page.drawCircle({
+    x: centerX,
+    y: centerY,
+    size: 30 * scale,
+    color: NAVY,
+  });
+
+  /*
+   * Radar sweep.
+   *
+   * pdf-lib does not provide SVG gradient fills here,
+   * so the sweep is represented with layered,
+   * translucent blue wedges.
+   */
+
+  page.drawSvgPath(
+    "M32 32 L58 9 A35 35 0 0 1 60 35 Z",
+    {
+      x,
+      y: y + size,
+      scale,
+      color: radarBlue,
+      opacity: 0.16,
+    }
+  );
+
+  page.drawSvgPath(
+    "M32 32 L58 9 L52 18 Z",
+    {
+      x,
+      y: y + size,
+      scale,
+      color: radarBlue,
+      opacity: 0.28,
+    }
+  );
+
+  /*
+   * Radar rings
+   */
+
+  page.drawCircle({
+    x: centerX,
+    y: centerY,
+    size: 9 * scale,
+    borderColor: radarBlue,
+    borderWidth: 0.8 * scale,
+    borderOpacity: 0.5,
+  });
+
+  page.drawCircle({
+    x: centerX,
+    y: centerY,
+    size: 18 * scale,
+    borderColor: radarBlue,
+    borderWidth: 0.8 * scale,
+    borderOpacity: 0.38,
+  });
+
+  page.drawCircle({
+    x: centerX,
+    y: centerY,
+    size: 27 * scale,
+    borderColor: radarBlue,
+    borderWidth: 0.8 * scale,
+    borderOpacity: 0.3,
+  });
+
+  /*
+   * Crosshairs
+   */
+
+  page.drawLine({
+    start: {
+      x: centerX,
+      y: y + 4 * scale,
+    },
+    end: {
+      x: centerX,
+      y: y + 60 * scale,
+    },
+    thickness: 0.7 * scale,
+    color: radarBlue,
+    opacity: 0.28,
+  });
+
+  page.drawLine({
+    start: {
+      x: x + 4 * scale,
+      y: centerY,
+    },
+    end: {
+      x: x + 60 * scale,
+      y: centerY,
+    },
+    thickness: 0.7 * scale,
+    color: radarBlue,
+    opacity: 0.28,
+  });
+
+  /*
+   * Storm returns
+   */
+
+  page.drawCircle({
+    x: x + 45 * scale,
+    y: y + 44 * scale,
+    size: 4.2 * scale,
+    color: radarOrange,
+  });
+
+  page.drawCircle({
+    x: x + 49 * scale,
+    y: y + 39 * scale,
+    size: 2.7 * scale,
+    color: radarLightOrange,
+  });
+
+  page.drawCircle({
+    x: x + 42 * scale,
+    y: y + 39 * scale,
+    size: 2.3 * scale,
+    color: radarOrange,
+    opacity: 0.85,
+  });
+
+  page.drawCircle({
+    x: x + 21 * scale,
+    y: y + 21 * scale,
+    size: 2.8 * scale,
+    color: radarBlue,
+    opacity: 0.85,
+  });
+
+  /*
+   * Center point
+   */
+
+  page.drawCircle({
+    x: centerX,
+    y: centerY,
+    size: 3.6 * scale,
+    color: WHITE,
+  });
+
+  page.drawCircle({
+    x: centerX,
+    y: centerY,
+    size: 1.8 * scale,
+    color: radarBlue,
+  });
+
+  /*
+   * Outer border
+   */
+
+  page.drawCircle({
+    x: centerX,
+    y: centerY,
+    size: 29 * scale,
+    borderColor: radarBlue,
+    borderWidth: 1.2 * scale,
+    borderOpacity: 0.55,
   });
 }
 
@@ -505,23 +703,67 @@ export async function generateWeatherSnapPdf(
     color: NAVY,
   });
 
+  /*
+   * WeatherSnap radar logo
+   */
+
+  drawWeatherSnapRadarLogo(
+    page,
+    28,
+    724,
+    48
+  );
+
+  /*
+   * WeatherSnap wordmark
+   */
+
+  const weatherText =
+    "Weather";
+
+  const snapText =
+    "Snap";
+
+  const logoTextX = 86;
+  const logoTextY = 749;
+  const logoTextSize = 22;
+
   page.drawText(
-    "WeatherSnap",
+    weatherText,
     {
-      x: 32,
-      y: 750,
-      size: 25,
+      x: logoTextX,
+      y: logoTextY,
+      size: logoTextSize,
       font: bold,
       color: WHITE,
+    }
+  );
+
+  const weatherWidth =
+    bold.widthOfTextAtSize(
+      weatherText,
+      logoTextSize
+    );
+
+  page.drawText(
+    snapText,
+    {
+      x:
+        logoTextX +
+        weatherWidth,
+      y: logoTextY,
+      size: logoTextSize,
+      font: bold,
+      color: BLUE,
     }
   );
 
   page.drawText(
     "WEATHER SNAPSHOT",
     {
-      x: 32,
+      x: logoTextX,
       y: 731,
-      size: 8,
+      size: 7,
       font: bold,
       color: rgb(
         0.72,
@@ -532,12 +774,12 @@ export async function generateWeatherSnapPdf(
   );
 
   page.drawText(
-    "Weather Intelligence. Instantly.",
+    "WEATHER INTELLIGENCE. INSTANTLY.",
     {
-      x: 32,
-      y: 716,
-      size: 8,
-      font: regular,
+      x: logoTextX,
+      y: 717,
+      size: 6.5,
+      font: bold,
       color: rgb(
         0.72,
         0.82,
@@ -545,6 +787,10 @@ export async function generateWeatherSnapPdf(
       ),
     }
   );
+
+  /*
+   * Report ID
+   */
 
   page.drawText(
     "REPORT ID",
