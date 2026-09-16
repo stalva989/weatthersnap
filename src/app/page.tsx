@@ -200,14 +200,14 @@ export default function Home() {
             </a>
 
             <a
-              href="#report-preview"
+              href="/report-preview"
               className="transition hover:text-[var(--storm-blue)]"
             >
               Report Preview
             </a>
 
             <a
-              href="#faq"
+              href="/faq"
               className="transition hover:text-[var(--storm-blue)]"
             >
               FAQ
